@@ -1,6 +1,39 @@
 import { useState, useCallback, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 
+const themes = {
+  light: {
+    background: "bg-gray-100",
+    text: "text-gray-800",
+    navBackground: "bg-white",
+    navShadow: "shadow-lg",
+    cardBackground: "bg-white",
+    borderColor: "border-gray-300",
+    primaryColor: "text-primary",
+    secondaryColor: "text-gray-600",
+    buttonBg: "bg-gray-100",
+    buttonHoverBg: "bg-gray-200",
+    errorText: "text-red-600",
+    successBg: "bg-green-600",
+    successHoverBg: "bg-green-700",
+  },
+  dark: {
+    background: "bg-gray-900",
+    text: "text-gray-100",
+    navBackground: "bg-gray-800",
+    navShadow: "shadow-lg",
+    cardBackground: "bg-gray-800",
+    borderColor: "border-gray-600",
+    primaryColor: "text-primary",
+    secondaryColor: "text-gray-400",
+    buttonBg: "bg-gray-700",
+    buttonHoverBg: "bg-gray-600",
+    errorText: "text-red-400",
+    successBg: "bg-green-500",
+    successHoverBg: "bg-green-600",
+  },
+};
+
 export default function ResizePage() {
   const [file, setFile] = useState(null);
   const [resizedFile, setResizedFile] = useState(null);
@@ -11,6 +44,10 @@ export default function ResizePage() {
     height: "",
     maintainAspect: true,
   });
+  const [newFileName, setNewFileName] = useState("");
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  const theme = isDarkMode ? themes.dark : themes.light;
 
   const onDrop = useCallback((acceptedFiles) => {
     try {
@@ -19,6 +56,7 @@ export default function ResizePage() {
         setFile(imageFile);
         setResizedFile(null);
         setError("");
+        setNewFileName(imageFile.name.replace(/\.[^/.]+$/, ""));
       }
     } catch (err) {
       setError("Error occurred while setting file state");
@@ -66,9 +104,13 @@ export default function ResizePage() {
       ctx.drawImage(img, 0, 0, newWidth, newHeight);
 
       canvas.toBlob((blob) => {
-        const resizedFile = new File([blob], `resized-${file.name}`, {
-          type: file.type,
-        });
+        const resizedFile = new File(
+          [blob],
+          `${newFileName}.${file.type.split("/")[1]}`,
+          {
+            type: file.type,
+          }
+        );
         setResizedFile(resizedFile);
         URL.revokeObjectURL(img.src);
       }, file.type);
@@ -104,22 +146,34 @@ export default function ResizePage() {
   };
 
   return (
-    <div>
-      <div className="max-w-3xl mx-auto px-4">
-        <h1 className="text-4xl font-bold text-center my-8">Image Resizer</h1>
+    <div className={`min-h-screen ${theme.background} py-8 px-4`}>
+      <div className="max-w-3xl mx-auto">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className={`text-4xl font-bold text-center ${theme.text}`}>
+            Image Resizer
+          </h1>
+          <button
+            onClick={() => setIsDarkMode(!isDarkMode)}
+            className="bg-gray-500 text-white px-4 py-2 rounded-lg"
+          >
+            {isDarkMode ? "Light Mode" : "Dark Mode"}
+          </button>
+        </div>
 
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+        <div
+          className={`${theme.cardBackground} rounded-xl ${theme.navShadow} p-6 mb-8`}
+        >
           <div
             {...getRootProps()}
             className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors
               ${
                 isDragActive
-                  ? "border-primary bg-blue-50"
-                  : "border-gray-300 hover:border-primary"
+                  ? `border-primary bg-blue-50`
+                  : `${theme.borderColor} hover:border-primary`
               }`}
           >
             <input {...getInputProps()} />
-            <p className="text-gray-600">
+            <p className={`${theme.secondaryColor}`}>
               {isDragActive
                 ? "Drop the image here"
                 : "Drag & drop an image, or click to select"}
@@ -130,7 +184,9 @@ export default function ResizePage() {
             <div className="mt-8">
               <div className="flex flex-col md:flex-row gap-8">
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold mb-4">Original Image</h3>
+                  <h3 className={`text-lg font-semibold mb-4 ${theme.text}`}>
+                    Original Image
+                  </h3>
                   <img
                     src={URL.createObjectURL(file)}
                     alt="Original"
@@ -139,28 +195,32 @@ export default function ResizePage() {
                 </div>
 
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold mb-4">
+                  <h3 className={`text-lg font-semibold mb-4 ${theme.text}`}>
                     Resize Settings
                   </h3>
                   <div className="space-y-4">
                     <div>
-                      <label className="block mb-2">Width (px)</label>
+                      <label className={`block mb-2 ${theme.text}`}>
+                        Width (px)
+                      </label>
                       <input
                         type="number"
                         value={dimensions.width}
                         onChange={handleDimensionChange}
                         name="width"
-                        className="w-full p-2 border rounded"
+                        className={`w-full p-2 border rounded ${theme.text}`}
                       />
                     </div>
                     <div>
-                      <label className="block mb-2">Height (px)</label>
+                      <label className={`block mb-2 ${theme.text}`}>
+                        Height (px)
+                      </label>
                       <input
                         type="number"
                         value={dimensions.height}
                         onChange={handleDimensionChange}
                         name="height"
-                        className="w-full p-2 border rounded"
+                        className={`w-full p-2 border rounded ${theme.text}`}
                       />
                     </div>
                     <label className="flex items-center space-x-2">
@@ -169,12 +229,23 @@ export default function ResizePage() {
                         checked={dimensions.maintainAspect}
                         onChange={handleMaintainAspectChange}
                       />
-                      <span>Maintain Aspect Ratio</span>
+                      <span className={theme.text}>Maintain Aspect Ratio</span>
                     </label>
+                    <div>
+                      <label className={`${theme.secondaryColor} font-medium`}>
+                        New File Name
+                      </label>
+                      <input
+                        type="text"
+                        value={newFileName}
+                        onChange={(e) => setNewFileName(e.target.value)}
+                        className={`w-full p-2 border rounded ${theme.text}`}
+                      />
+                    </div>
                     <button
                       onClick={handleResize}
                       disabled={isProcessing}
-                      className="bg-primary text-white px-6 py-2 rounded-lg hover:opacity-90 disabled:opacity-50"
+                      className={`${theme.buttonBg} ${theme.text} px-6 py-2 rounded-lg hover:${theme.buttonHoverBg} disabled:opacity-50 disabled:cursor-not-allowed mt-4`}
                     >
                       {isProcessing ? "Resizing..." : "Resize Image"}
                     </button>
@@ -184,7 +255,9 @@ export default function ResizePage() {
 
               {resizedFile && (
                 <div className="mt-8">
-                  <h3 className="text-lg font-semibold mb-4">Resized Image</h3>
+                  <h3 className={`text-lg font-semibold mb-4 ${theme.text}`}>
+                    Resized Image
+                  </h3>
                   <div className="flex items-center gap-8">
                     <img
                       src={URL.createObjectURL(resizedFile)}
@@ -194,7 +267,8 @@ export default function ResizePage() {
                     <a
                       href={URL.createObjectURL(resizedFile)}
                       download={resizedFile.name}
-                      className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-green-700"
+                      className={`inline-block ${theme.successBg} text-white px-6 py-2 rounded-lg
+                      hover:${theme.successHoverBg} transition-colors font-medium`}
                     >
                       Download Resized Image
                     </a>
@@ -203,7 +277,9 @@ export default function ResizePage() {
               )}
 
               {error && (
-                <div className="mt-4 text-red-600 font-medium">{error}</div>
+                <div className={`mt-4 ${theme.errorText} font-medium`}>
+                  {error}
+                </div>
               )}
             </div>
           )}
